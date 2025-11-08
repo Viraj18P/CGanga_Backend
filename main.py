@@ -1,13 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import crud
-import crud_transactions
-
-from fastapi import UploadFile, File
-import zipfile
-import shapefile
-import os
-import crud_transactions
+from crud_transactions import (
+    add_groundwater_point,
+    update_stream_segment,
+    insert_stream_shapefile,
+    insert_basin_shapefile,
+)
 
 
 app = FastAPI(title="Hindon GeoAPI")
@@ -51,19 +50,19 @@ async def get_ugc_stations():
 
 @app.post("/api/add_groundwater_point")
 async def add_groundwater(lat: float, lon: float, water_level: float, district: str = ""):
-    return await crud_transactions.add_groundwater_point(lat, lon, water_level, district)
+    return await add_groundwater_point(lat, lon, water_level, district)
 
 
 @app.put("/api/update_stream")
 async def update_stream(id: int, name: str, remarks: str = ""):
-    return await crud_transactions.update_stream_segment(id, name, remarks)
+    return await update_stream_segment(id, name, remarks)
 
 
 
 @app.post("/api/upload_stream_shapefile")
 async def upload_stream_shapefile(file: UploadFile = File(...)):
-    return await crud_transactions.insert_stream_shapefile(file)
+    return await insert_stream_shapefile(file)
 
 @app.post("/api/upload_basin_shapefile")
 async def upload_basin_shapefile(file: UploadFile = File(...)):
-    return await crud_transactions.insert_basin_shapefile(file)
+    return await insert_basin_shapefile(file)

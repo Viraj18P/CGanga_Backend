@@ -1,24 +1,55 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-import crud
-from crud_transactions import (
-    add_groundwater_point,
-    update_stream_segment,
-    insert_stream_shapefile,
-    insert_basin_shapefile,
-)
+from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
+from database import Base, engine
+from models import User
+from schemas import UserCreate, ShowUser
+from crud import create_user, get_user_by_username
+from utils import generate_verification_token
+from auth import authenticate_user, create_access_token, get_db
 
 
-app = FastAPI(title="Hindon GeoAPI")
 
-# CORS middleware allows the frontend (on a different address) to access this backend
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # or ["http://localhost:5173"] if using Vite
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # very important
+    allow_headers=["*"],  # very important
 )
+@app.post("/register", response_model=ShowUser)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = get_user_by_username(db, user.username)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    return create_user(db, user)
+@app.get("/verify/{token}")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.verification_token == token).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification link")
+
+    user.is_verified = True
+    user.verification_token = None
+    db.commit()
+    return {"message": "Email verified successfully!"}
+@app.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    
+    token = create_access_token({"sub": user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.get("/")
+def root():
+    return {"message": "FastAPI Auth system working!"}
+
 
 @app.get("/", tags=["Root"])
 async def read_root():

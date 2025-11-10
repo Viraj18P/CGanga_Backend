@@ -1,3 +1,29 @@
+from sqlalchemy.orm import Session
+from models import User
+from schemas import UserCreate
+from utils import hash_password, generate_verification_token
+from verify_email import send_verification_email
+
+def create_user(db: Session, user: UserCreate):
+    hashed_pw = hash_password(user.password)
+    token = generate_verification_token()
+    db_user = User(
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_pw,
+        verification_token=token,
+        is_verified=False
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    send_verification_email(user.email, user.username, token)
+    return db_user
+
+
+def get_user_by_username(db: Session, username: str):
+    return db.query(User).filter(User.username == username).first()
+
 import json
 from database import get_db_connection
 

@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/CGanga_Backend.iml" filepath="$PROJECT_DIR$/.idea/CGanga_Backend.iml" />
+      <module fileurl="file://$USER_HOME$/WebstormProjects/Cgangafrontend/.idea/Cgangafrontend.iml" filepath="$USER_HOME$/WebstormProjects/Cgangafrontend/.idea/Cgangafrontend.iml" />
     </modules>
   </component>
 </project>

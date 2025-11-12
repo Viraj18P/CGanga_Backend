@@ -46,16 +46,17 @@ async def format_records_as_geojson(records):
     }
 
 async def get_all_geodata_from_table(table_name: str):
-    """Fetches all records from a given table and returns them as GeoJSON."""
+    """Fetches a limited number of records from a given table and returns them as GeoJSON."""
     conn = await get_db_connection()
     if not conn:
         return {"error": "Database connection failed"}
     
     try:
-        # The core SQL query that converts geometry to GeoJSON
+        # The modified SQL query with the LIMIT clause
         query = f"""
             SELECT *, ST_AsGeoJSON(geom) as geom_geojson
-            FROM {table_name};
+            FROM {table_name}
+            LIMIT 1000;
         """
         records = await conn.fetch(query)
         geojson_data = await format_records_as_geojson(records)

@@ -4,6 +4,7 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+   
 
 class UserLogin(BaseModel):
     username: str
@@ -13,6 +14,7 @@ class ShowUser(BaseModel):
     id: int
     username: str
     email: EmailStr
+    
     is_verified: bool
 
     class Config:

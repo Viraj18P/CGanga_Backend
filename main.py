@@ -5,7 +5,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from database import Base, engine
 from models import User
 from schemas import UserCreate, ShowUser
-from crud import create_user, get_user_by_username
+import crud
+from crud import *
+from crud_transactions import *
 from utils import generate_verification_token
 from auth import authenticate_user, create_access_token, get_db
 
@@ -13,7 +15,10 @@ from auth import authenticate_user, create_access_token, get_db
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="Hindon Geospatial Data API",
+    servers=[{"url": "http://127.0.0.1:8000", "description": "Local dev server"}]
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # or ["http://localhost:5173"] if using Vite
@@ -46,9 +51,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     token = create_access_token({"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
 
-@app.get("/")
-def root():
-    return {"message": "FastAPI Auth system working!"}
+
 
 
 @app.get("/", tags=["Root"])

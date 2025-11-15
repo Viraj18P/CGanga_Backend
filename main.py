@@ -5,7 +5,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 from database import Base, engine
 from models import User
 from schemas import UserCreate, ShowUser
-import crud
 from crud import *
 from crud_transactions import *
 from utils import generate_verification_token
@@ -99,4 +98,5 @@ async def upload_stream_shapefile(file: UploadFile = File(...)):
 
 @app.post("/api/upload_basin_shapefile")
 async def upload_basin_shapefile(file: UploadFile = File(...)):
+
     return await insert_basin_shapefile(file)

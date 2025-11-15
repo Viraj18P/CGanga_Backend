@@ -14,7 +14,6 @@ class ShowUser(BaseModel):
     id: int
     username: str
     email: EmailStr
-    
     is_verified: bool
 
     class Config:

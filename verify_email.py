@@ -1,9 +1,10 @@
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 SENDER_EMAIL = "iamsubhansh1@gmail.com"
-SENDER_PASSWORD = "zcxa vldh gmdq aebd" 
+SENDER_PASSWORD = "zcxa vldh gmdq aebd"
+
 
 def send_verification_email(to_email: str, username: str, token: str):
     subject = "Verify your email"
@@ -27,4 +28,3 @@ def send_verification_email(to_email: str, username: str, token: str):
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
- 

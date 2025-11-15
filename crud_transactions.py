@@ -1,14 +1,11 @@
-﻿import json
-from database import get_db_connection
-import asyncpg
-
-import os
-import shapefile
-import zipfile
+﻿import os
 import tempfile
+import zipfile
 
+import shapefile
 from shapely.geometry import shape, mapping
-from shapely.ops import transform
+
+from database import get_db_connection
 
 
 # ---------------------------
@@ -73,15 +70,12 @@ async def add_groundwater_point(lat: float, lon: float, water_level: float, dist
                 raise Exception("Water level out of allowed range")
 
             query = """
-                INSERT INTO ground_water_points
-                (geom, district, rl)
-                VALUES (
-                    ST_GeomFromText($1, 4326),
-                    $2,
-                    $3
-                )
-                RETURNING id;
-            """
+                    INSERT INTO ground_water_points
+                        (geom, district, rl)
+                    VALUES (ST_GeomFromText($1, 4326),
+                            $2,
+                            $3) RETURNING id; \
+                    """
 
             new_id = await conn.fetchval(query, geom, district, water_level)
             return {"status": "success", "id": new_id}
@@ -114,12 +108,11 @@ async def update_stream_segment(id: int, name: str, remarks: str):
                 raise Exception("Stream segment does not exist")
 
             query = """
-                UPDATE hindon_stream_network
-                SET name = $2,
-                    remarks = $3
-                WHERE id = $1
-                RETURNING id;
-            """
+                    UPDATE hindon_stream_network
+                    SET name    = $2,
+                        remarks = $3
+                    WHERE id = $1 RETURNING id; \
+                    """
 
             updated_id = await conn.fetchval(query, id, name, remarks)
             return {"status": "updated", "id": updated_id}
@@ -175,11 +168,9 @@ async def insert_stream_shapefile(uploaded_zip):
                 await conn.execute(
                     """
                     INSERT INTO hindon_stream_network (geom, name, remarks)
-                    VALUES (
-                        ST_GeomFromText($1, 4326),
-                        $2,
-                        $3
-                    )
+                    VALUES (ST_GeomFromText($1, 4326),
+                            $2,
+                            $3)
                     """,
                     geom_wkt,
                     attrs.get("name"),

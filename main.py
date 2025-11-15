@@ -1,15 +1,16 @@
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+
+from auth import authenticate_user, create_access_token, get_db
+from crud import create_user, get_user_by_username
+from crud import get_all_geodata_from_table
+from crud_transactions import insert_basin_shapefile, insert_stream_shapefile, update_stream_segment, \
+    add_groundwater_point
 from database import Base, engine
 from models import User
 from schemas import UserCreate, ShowUser
-from crud import create_user, get_user_by_username
-from utils import generate_verification_token
-from auth import authenticate_user, create_access_token, get_db
-from crud_transactions import insert_basin_shapefile,insert_stream_shapefile,update_stream_segment,add_groundwater_point
-from crud import get_all_geodata_from_table
 
 Base.metadata.create_all(bind=engine)
 
@@ -21,12 +22,16 @@ app.add_middleware(
     allow_methods=["*"],  # very important
     allow_headers=["*"],  # very important
 )
+
+
 @app.post("/register", response_model=ShowUser)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = get_user_by_username(db, user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     return create_user(db, user)
+
+
 @app.get("/verify/{token}")
 def verify_email(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.verification_token == token).first()
@@ -37,14 +42,17 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user.verification_token = None
     db.commit()
     return {"message": "Email verified successfully!"}
+
+
 @app.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    
-    token = create_access_token({"sub": user.username})
+
+    token = create_access_token({"sub": user.username, "role": user.role})
     return {"access_token": token, "token_type": "bearer"}
+
 
 @app.get("/")
 def root():
@@ -56,6 +64,7 @@ async def read_root():
     """A simple welcome message for the API root."""
     return {"message": "Welcome to the Hindon Geospatial Data API!"}
 
+
 # --- API Endpoints for Your Geospatial Data ---
 
 @app.get("/api/ground_water_points", tags=["Geospatial Data"])
@@ -63,15 +72,18 @@ async def get_ground_water_points():
     """Fetches all ground water points as GeoJSON."""
     return await get_all_geodata_from_table("ground_water_points")
 
+
 @app.get("/api/hindon_basin", tags=["Geospatial Data"])
 async def get_hindon_basin():
     """Fetches the Hindon basin polygon as GeoJSON."""
     return await get_all_geodata_from_table("hindon_basin")
 
+
 @app.get("/api/hindon_stream_network", tags=["Geospatial Data"])
 async def get_hindon_stream_network():
     """Fetches the Hindon stream network as GeoJSON."""
     return await get_all_geodata_from_table("hindon_stream_network")
+
 
 @app.get("/api/ugc_stations", tags=["Geospatial Data"])
 async def get_ugc_stations():
@@ -89,14 +101,16 @@ async def update_stream(id: int, name: str, remarks: str = ""):
     return await update_stream_segment(id, name, remarks)
 
 
-
 @app.post("/api/upload_stream_shapefile")
 async def upload_stream_shapefile(file: UploadFile = File(...)):
     return await insert_stream_shapefile(file)
 
+
 @app.post("/api/upload_basin_shapefile")
 async def upload_basin_shapefile(file: UploadFile = File(...)):
     return await insert_basin_shapefile(file)
+
+
 @app.get("/simple_user")
 def get_simple_user(db: Session = Depends(get_db)):
     """
@@ -106,27 +120,30 @@ def get_simple_user(db: Session = Depends(get_db)):
     user = db.query(User).first()
     if not user:
         return {"message": "No user found"}
-    
+
     return {
         "username": user.username,
         "email": user.email
     }
+
+
 from crud_posts import (
-   create_post, get_all_posts, update_post, delete_post,
-   create_gallery_item, get_gallery_items,
-   create_event, get_events, delete_event
- )
-from schemas import PostCreate, GalleryCreate, EventCreate ,ShowEvent,ShowGallery,ShowPost
-from fastapi import Body
+    create_post, get_all_posts, update_post, delete_post,
+    create_gallery_item, get_gallery_items,
+    create_event, get_events, delete_event
+)
+from schemas import PostCreate, GalleryCreate, EventCreate, ShowEvent, ShowGallery, ShowPost
 
 
 @app.post("/posts", response_model=ShowPost)
 def api_create_post(data: PostCreate, db: Session = Depends(get_db)):
-     return create_post(db, data)
+    return create_post(db, data)
+
 
 @app.get("/posts", response_model=list[ShowPost])
 def api_get_posts(db: Session = Depends(get_db)):
     return get_all_posts(db)
+
 
 @app.put("/posts/{post_id}", response_model=ShowPost)
 def api_update_post(post_id: int, data: PostCreate, db: Session = Depends(get_db)):
@@ -134,6 +151,7 @@ def api_update_post(post_id: int, data: PostCreate, db: Session = Depends(get_db
     if not updated:
         raise HTTPException(404, "Post not found")
     return updated
+
 
 @app.delete("/posts/{post_id}")
 def api_delete_post(post_id: int, db: Session = Depends(get_db)):
@@ -145,7 +163,8 @@ def api_delete_post(post_id: int, db: Session = Depends(get_db)):
 
 @app.post("/gallery", response_model=ShowGallery)
 def api_add_gallery(data: GalleryCreate, db: Session = Depends(get_db)):
-     return create_gallery_item(db, data)
+    return create_gallery_item(db, data)
+
 
 @app.get("/gallery", response_model=list[ShowGallery])
 def api_get_gallery(db: Session = Depends(get_db)):
@@ -159,9 +178,11 @@ def api_get_gallery(db: Session = Depends(get_db)):
 def api_add_event(data: EventCreate, db: Session = Depends(get_db)):
     return create_event(db, data)
 
+
 @app.get("/events", response_model=list[ShowEvent])
 def api_get_events(db: Session = Depends(get_db)):
     return get_events(db)
+
 
 @app.delete("/events/{id}")
 def api_delete_event(id: int, db: Session = Depends(get_db)):
@@ -169,4 +190,3 @@ def api_delete_event(id: int, db: Session = Depends(get_db)):
     if not ok:
         raise HTTPException(404, "Event not found")
     return {"message": "Deleted"}
-

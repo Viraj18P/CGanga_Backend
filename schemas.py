@@ -1,13 +1,19 @@
-from pydantic import BaseModel, EmailStr
 from datetime import datetime
+
+from pydantic import BaseModel, EmailStr
+
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    role: str = 'user'
+
 
 class UserLogin(BaseModel):
     username: str
     password: str
+
 
 class ShowUser(BaseModel):
     id: int
@@ -17,38 +23,44 @@ class ShowUser(BaseModel):
 
     class Config:
         orm_mode = True
-        from_attributes = True        
+        from_attributes = True
 
-#---------------------------------
+    # ---------------------------------
+
+
 class PostBase(BaseModel):
-     title: str
-     content: str
-     username: str
-     image: str | None = None
+    title: str
+    content: str
+    username: str
+    image: str | None = None
+
 
 class PostCreate(PostBase):
-     pass
+    pass
+
 
 class ShowPost(PostBase):
-     id: int
-     date: datetime
+    id: int
+    date: datetime
 
-     class Config:
+    class Config:
         from_attributes = True
 
 
 class GalleryBase(BaseModel):
-     src: str
-     caption: str
+    src: str
+    caption: str
+
 
 class GalleryCreate(GalleryBase):
-     pass
+    pass
+
 
 class ShowGallery(GalleryBase):
-     id: int
+    id: int
 
-     class Config:
-         from_attributes = True
+    class Config:
+        from_attributes = True
 
 
 class EventBase(BaseModel):
@@ -56,8 +68,10 @@ class EventBase(BaseModel):
     date: str
     location: str
 
+
 class EventCreate(EventBase):
-     pass
+    pass
+
 
 class ShowEvent(EventBase):
     id: int

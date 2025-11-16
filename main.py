@@ -140,18 +140,19 @@ async def upload_basin_shapefile(file: UploadFile = File(...)):
 
 
 @app.get("/simple_user")
-def get_simple_user(db: Session = Depends(get_db)):
+def get_user_by_name(username: str, db: Session = Depends(get_db)):
     """
-    Returns first user from the database.
-    This is unprotected, no token required.
+    Fetch user using 'username' passed as query parameter.
+    Example: /simple_user?username=Subh494
     """
-    user = db.query(User).first()
+    user = db.query(User).filter(User.username == username).first()
+
     if not user:
-        raise HTTPException(status_code=404, detail="No user found")
+        raise HTTPException(status_code=404, detail="User not found")
 
     return {
         "username": user.username,
-        "email": user.email
+        "email": user.email,
     }
 
 
@@ -221,4 +222,5 @@ def api_delete_event(id: int, db: Session = Depends(get_db)):
 
 @app.get("/logs")
 def read_logs():
+
     return logs()

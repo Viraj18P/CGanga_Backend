@@ -6,6 +6,7 @@ from utils import hash_password, generate_verification_token
 from verify_email import send_verification_email
 
 
+
 def create_user(db: Session, user: UserCreate):
     hashed_pw = hash_password(user.password)
     token = generate_verification_token()
@@ -71,3 +72,12 @@ async def get_all_geodata_from_table(table_name: str):
     finally:
         if conn:
             await conn.close()
+
+
+async def logs():
+    statement = "SELECT * FROM logs LIMIT 100"
+    conn = await get_db_connection()
+    with Session(conn) as session:
+        results = session.execute(statement).fetchall()
+        return results
+

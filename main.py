@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from auth import authenticate_user, create_access_token, get_db
-from crud import create_user, get_user_by_username
+from crud import create_user, get_user_by_username, logs
 from crud import get_all_geodata_from_table
 from crud_transactions import insert_basin_shapefile, insert_stream_shapefile, update_stream_segment, \
     add_groundwater_point
@@ -190,3 +190,7 @@ def api_delete_event(id: int, db: Session = Depends(get_db)):
     if not ok:
         raise HTTPException(404, "Event not found")
     return {"message": "Deleted"}
+
+@app.get("/logs")
+def read_logs():
+    return logs()

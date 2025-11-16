@@ -24,6 +24,26 @@ app.add_middleware(
 )
 
 
+# Helper: convert backend {'error': msg} into proper HTTP responses
+def _check_and_raise(result):
+    """If result is a dict with an 'error' key, raise HTTPException with an appropriate status code.
+
+    Heuristics:
+    - Database connection failures and internal exceptions -> 500
+    - Validation / not found / client errors -> 400
+    """
+    if isinstance(result, dict) and "error" in result:
+        msg = str(result.get("error"))
+        low = msg.lower()
+        if "db connection" in low or "connection failed" in low or "exception" in low or "traceback" in low:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+        if "not found" in low or "does not exist" in low or "invalid" in low or "out of allowed" in low:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+        # fallback to 400 for other errors coming from business logic
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg)
+    return result
+
+
 @app.post("/register", response_model=ShowUser)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = get_user_by_username(db, user.username)
@@ -70,45 +90,53 @@ async def read_root():
 @app.get("/api/ground_water_points", tags=["Geospatial Data"])
 async def get_ground_water_points():
     """Fetches all ground water points as GeoJSON."""
-    return await get_all_geodata_from_table("ground_water_points")
+    result = await get_all_geodata_from_table("ground_water_points")
+    return _check_and_raise(result)
 
 
 @app.get("/api/hindon_basin", tags=["Geospatial Data"])
 async def get_hindon_basin():
     """Fetches the Hindon basin polygon as GeoJSON."""
-    return await get_all_geodata_from_table("hindon_basin")
+    result = await get_all_geodata_from_table("hindon_basin")
+    return _check_and_raise(result)
 
 
 @app.get("/api/hindon_stream_network", tags=["Geospatial Data"])
 async def get_hindon_stream_network():
     """Fetches the Hindon stream network as GeoJSON."""
-    return await get_all_geodata_from_table("hindon_stream_network")
+    result = await get_all_geodata_from_table("hindon_stream_network")
+    return _check_and_raise(result)
 
 
 @app.get("/api/ugc_stations", tags=["Geospatial Data"])
 async def get_ugc_stations():
     """Fetches all UGC stations as GeoJSON."""
-    return await get_all_geodata_from_table("ugc_stations")
+    result = await get_all_geodata_from_table("ugc_stations")
+    return _check_and_raise(result)
 
 
 @app.post("/api/add_groundwater_point")
 async def add_groundwater(lat: float, lon: float, water_level: float, district: str = ""):
-    return await add_groundwater_point(lat, lon, water_level, district)
+    result = await add_groundwater_point(lat, lon, water_level, district)
+    return _check_and_raise(result)
 
 
 @app.put("/api/update_stream")
 async def update_stream(id: int, name: str, remarks: str = ""):
-    return await update_stream_segment(id, name, remarks)
+    result = await update_stream_segment(id, name, remarks)
+    return _check_and_raise(result)
 
 
 @app.post("/api/upload_stream_shapefile")
 async def upload_stream_shapefile(file: UploadFile = File(...)):
-    return await insert_stream_shapefile(file)
+    result = await insert_stream_shapefile(file)
+    return _check_and_raise(result)
 
 
 @app.post("/api/upload_basin_shapefile")
 async def upload_basin_shapefile(file: UploadFile = File(...)):
-    return await insert_basin_shapefile(file)
+    result = await insert_basin_shapefile(file)
+    return _check_and_raise(result)
 
 
 @app.get("/simple_user")
@@ -119,7 +147,7 @@ def get_simple_user(db: Session = Depends(get_db)):
     """
     user = db.query(User).first()
     if not user:
-        return {"message": "No user found"}
+        raise HTTPException(status_code=404, detail="No user found")
 
     return {
         "username": user.username,

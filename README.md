@@ -172,14 +172,3 @@ Clone or view the frontend repo to see how it consumes these endpoints.
 ## License
 
 This repository follows the included LICENSE file. See `LICENSE` for details.
-
-
----
-
-If you'd like, I can also:
-
-- Add example SQL to create the minimal tables.
-- Add a simple integration test that exercises the endpoints (mocking the DB).
-- Improve shapefile attribute mapping to be configurable.
-
-Tell me which of the extras you'd like next.

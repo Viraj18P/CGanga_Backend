@@ -11,7 +11,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
-    role: str = 'user'
+    role: str = Column(String, default="user")
     hashed_password = Column(String)
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, nullable=True)

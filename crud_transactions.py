@@ -74,7 +74,8 @@ async def add_groundwater_point(lat: float, lon: float, water_level: float, dist
                         (geom, district, rl)
                     VALUES (ST_GeomFromText($1, 4326),
                             $2,
-                            $3) RETURNING id; \
+                            $3)
+                    RETURNING id; \
                     """
 
             new_id = await conn.fetchval(query, geom, district, water_level)
@@ -111,7 +112,8 @@ async def update_stream_segment(id: int, name: str, remarks: str):
                     UPDATE hindon_stream_network
                     SET name    = $2,
                         remarks = $3
-                    WHERE id = $1 RETURNING id; \
+                    WHERE id = $1
+                    RETURNING id; \
                     """
 
             updated_id = await conn.fetchval(query, id, name, remarks)
